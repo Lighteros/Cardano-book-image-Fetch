@@ -2,6 +2,7 @@
 
 use crate::{models::asset::Asset, utils::util::ipfs_to_http};
 
+use super::download::DownloadService;
 use anyhow::{Context, Result};
 use blockfrost::{load, AssetDetails, BlockFrostApi, BlockFrostSettings};
 use futures::future;
@@ -9,8 +10,7 @@ use reqwest::Url;
 use serde_json::Value;
 use std::{path::PathBuf, sync::Arc};
 use tokio::sync::mpsc;
-
-use super::download::DownloadService;
+use tokio::sync::Semaphore;
 
 /// BlockFrostService: struct to encapsulate methods related
 /// to interacting with BlockFrost API, an API to fetch Cardano data.
@@ -65,6 +65,8 @@ impl BlockFrostService {
         let initial_assets = assets.split_off(assets.len().saturating_sub(NUM_CONCURRENT_FETCHES));
         let mut remaining_tasks = initial_assets.len();
 
+        let semaphore = Arc::new(Semaphore::new(3));
+
         let client = Arc::new(self.client.clone());
         for asset in initial_assets {
             // create a new task for each asset in order fetch the asset details
@@ -112,9 +114,16 @@ impl BlockFrostService {
 
                                 // create a new task to download the image associated with the asset
                                 let download_service = DownloadService::new(&output_dir);
+                                let permit = semaphore
+                                    .clone()
+                                    .acquire_owned()
+                                    .await
+                                    .expect("Failed to acquire semaphore"); // Acquire a permit from the semaphore
+
                                 println!("Downloading asset: {:?}", url);
                                 let url = Url::parse(&url)?;
                                 let download_task = tokio::spawn(async move {
+                                    let _permit = permit;
                                     match download_service.download_and_save(url, filename).await {
                                         Err(e) => eprintln!("Failed to download asset: {:?}", e),
                                         _ => (),
