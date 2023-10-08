@@ -32,8 +32,8 @@ project_id = "<your blockfrost project id>"
 To run this command line application, clone the repo first.
 
 ```bash
-git clone https://github.com/dskydiver/cardano-book-image-fetcher.git
-cd cardano-book-image-fetcher
+git clone https://github.com/dskydiver/cardano_book_image_fetcher.git
+cd cardano_book_image_fetcher
 ```
 
 1. Build the application
