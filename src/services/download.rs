@@ -51,9 +51,14 @@ impl DownloadService {
 
             // Stream download
             // While there are data chunks available in the source...
-            while let Some(chunk) = source.chunk().await.context("Failed to read chunk")? {
-                // ...write those chunks to the destination file.
-                dest.write_all(&chunk).await.context("Failed to write to the file")?;
+            while let Ok(chunk_result) = source.chunk().await {
+                match chunk_result {
+                    Some(chunk) => {
+                        // ...write those chunks to the destination file.
+                        dest.write_all(&chunk).await.context("Failed to write to the file")?;
+                    }
+                    None => (),
+                }
             }
 
             // Persisting temp file (rename)
