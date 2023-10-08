@@ -2,10 +2,9 @@ mod models;
 mod services;
 mod utils;
 
-use services::{blockfrost::BlockFrostService, bookio::BookioService, download::DownloadService};
-use std::{path::PathBuf, process, sync::Arc};
+use services::{blockfrost::BlockFrostService, bookio::BookioService};
+use std::{path::PathBuf, process};
 use structopt::StructOpt;
-use tokio::sync::Mutex;
 
 #[derive(StructOpt, Debug)]
 #[structopt(name = "cardano_book_image_fetcher")]
@@ -38,8 +37,7 @@ async fn main() {
 
     if let Ok(true) = result {
         let service = BlockFrostService::new().await.unwrap();
-        let download_service = Arc::new(Mutex::new(DownloadService::new(opt.output_dir)));
-        let result = service.fetch_assets_metadata(&opt.policy_id, download_service).await;
+        let result = service.fetch_assets_metadata(&opt.policy_id, &opt.output_dir).await;
         if let Err(e) = result {
             println!("cannot fetch metadata: {}", e);
             process::exit(1);

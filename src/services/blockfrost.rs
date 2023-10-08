@@ -2,15 +2,13 @@
 
 use crate::{models::asset::Asset, utils::util::ipfs_to_http};
 
-use anyhow::Context;
+use anyhow::{Context, Result};
 use blockfrost::{load, AssetDetails, BlockFrostApi, BlockFrostSettings};
 use futures::future;
 use reqwest::Url;
 use serde_json::Value;
-use std::{error::Error, sync::Arc};
-use tokio::sync::{mpsc, Mutex};
-
-use anyhow::Result;
+use std::{path::PathBuf, sync::Arc};
+use tokio::sync::mpsc;
 
 use super::download::DownloadService;
 
@@ -55,8 +53,8 @@ impl BlockFrostService {
     pub async fn fetch_assets_metadata(
         &self,
         policy_id: &str,
-        download_serivce: Arc<Mutex<DownloadService>>,
-    ) -> Result<Vec<Asset>, Box<dyn Error>> {
+        output_dir: &PathBuf,
+    ) -> Result<Vec<Asset>> {
         // fetch all assets related to given policy
         let mut assets = self.fetch_assets(policy_id).await.context("Failed to fetch assets")?;
         assets.reverse();
@@ -113,16 +111,11 @@ impl BlockFrostService {
                                 let filename = format!("{}.{}", asset, extension);
 
                                 // create a new task to download the image associated with the asset
-                                let download_service = Arc::clone(&download_serivce);
+                                let download_service = DownloadService::new(&output_dir);
                                 println!("Downloading asset: {:?}", url);
                                 let url = Url::parse(&url)?;
                                 let download_task = tokio::spawn(async move {
-                                    match download_service
-                                        .lock()
-                                        .await
-                                        .download_and_save(url, filename)
-                                        .await
-                                    {
+                                    match download_service.download_and_save(url, filename).await {
                                         Err(e) => eprintln!("Failed to download asset: {:?}", e),
                                         _ => (),
                                     }
