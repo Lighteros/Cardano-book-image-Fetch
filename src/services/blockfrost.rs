@@ -65,6 +65,7 @@ impl BlockFrostService {
         let initial_assets = assets.split_off(assets.len().saturating_sub(NUM_CONCURRENT_FETCHES));
         let mut remaining_tasks = initial_assets.len();
 
+        // create a semaphore to limit the number of concurrent downloads (limit the cpu usage)
         let semaphore = Arc::new(Semaphore::new(3));
 
         let client = Arc::new(self.client.clone());
