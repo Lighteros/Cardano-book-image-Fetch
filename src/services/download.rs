@@ -1,5 +1,5 @@
 use anyhow::{Context, Result};
-use reqwest::Url;
+use reqwest::{Client, Url};
 use std::path::PathBuf;
 use tempfile::NamedTempFile;
 use tokio::fs::File;
@@ -8,12 +8,13 @@ use tokio::io::AsyncWriteExt;
 /// DownloadService: it has one member: output_dir.
 pub struct DownloadService {
     output_dir: PathBuf,
+    client: Client,
 }
 
 impl DownloadService {
     /// Constructor for DownloadService. Takes a path where files will be saved.
     pub fn new(output_dir: impl Into<PathBuf>) -> Self {
-        Self { output_dir: output_dir.into() }
+        Self { output_dir: output_dir.into(), client: Client::new() }
     }
 
     /// The method responsible for downloading and saving a file.
@@ -43,7 +44,8 @@ impl DownloadService {
             let temp_file_path = temp_file.path().to_path_buf(); // keep tempfile path for later
 
             // Fetch the file content into the 'source' variable
-            let mut source = reqwest::get(url).await.context("Failed downloading file")?;
+            let mut source =
+                self.client.get(url).send().await.context("Failed downloading file")?;
 
             // Initialize an async file instance pointing at the temp file
             let mut dest =

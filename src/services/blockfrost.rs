@@ -68,6 +68,8 @@ impl BlockFrostService {
         // create a semaphore to limit the number of concurrent downloads (limit the cpu usage)
         let semaphore = Arc::new(Semaphore::new(3));
 
+        let download_service = Arc::new(DownloadService::new(output_dir.clone()));
+
         let client = Arc::new(self.client.clone());
         for asset in initial_assets {
             // create a new task for each asset in order fetch the asset details
@@ -114,12 +116,13 @@ impl BlockFrostService {
                                 let filename = format!("{}.{}", asset, extension);
 
                                 // create a new task to download the image associated with the asset
-                                let download_service = DownloadService::new(&output_dir);
                                 let permit = semaphore
                                     .clone()
                                     .acquire_owned()
                                     .await
                                     .expect("Failed to acquire semaphore"); // Acquire a permit from the semaphore
+
+                                let download_service = Arc::clone(&download_service);
 
                                 println!("Downloading asset: {:?}", url);
                                 let url = Url::parse(&url)?;
