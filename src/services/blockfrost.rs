@@ -24,7 +24,7 @@ impl BlockFrostService {
     /// Constructs a new BlockFrostService.
     ///
     /// Initializes blockfrost api client with provided configurations.
-    pub async fn new() -> Result<Self> {
+    pub fn new() -> Result<Self> {
         let configurations =
             load::configurations_from_env().context("Failed to load configurations")?;
         let project_id = configurations["project_id"].as_str().unwrap();

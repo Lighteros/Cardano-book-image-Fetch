@@ -26,25 +26,25 @@ pub struct BookioService {
     client: Client,
 }
 
-const URL: &str = "https://api.book.io/api/v0/collections";
+pub const URL: &str = "https://api.book.io/api/v0/collections";
 
 impl BookioService {
     /// Constructs a new `BookioService`.
-    pub async fn new() -> Result<Self> {
+    pub fn new() -> Result<Self> {
         let client = Client::new();
         Ok(BookioService { client })
     }
 
     /// Fetches collections from the Book.io API.
-    pub async fn fetch_collections(&self) -> Result<Vec<Collection>> {
-        let res = self.client.get(URL).send().await.context("Failed to fetch collections")?;
+    pub async fn fetch_collections(&self, url: &str) -> Result<Vec<Collection>> {
+        let res = self.client.get(url).send().await.context("Failed to fetch collections")?;
         let response = res.json::<CollectionResponse>().await.context("Failed to parse")?;
         Ok(response.data)
     }
 
     /// Verifies the given policy ID by checking it's presence in the collections data fetched from the Book.io API.
-    pub async fn verify_policy_id(&self, policy_id: &str) -> Result<bool> {
-        match self.fetch_collections().await {
+    pub async fn verify_policy_id(&self, policy_id: &str, url: &str) -> Result<bool> {
+        match self.fetch_collections(url).await {
             Ok(collections) => {
                 if collections.iter().find(|col| col.collection_id == policy_id).is_some() {
                     Ok(true)

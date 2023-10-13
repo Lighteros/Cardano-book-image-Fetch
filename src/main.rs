@@ -2,7 +2,10 @@ mod models;
 mod services;
 mod utils;
 
-use services::{blockfrost::BlockFrostService, bookio::BookioService};
+use services::{
+    blockfrost::BlockFrostService,
+    bookio::{BookioService, URL},
+};
 use std::{path::PathBuf, process};
 use structopt::StructOpt;
 
@@ -22,8 +25,8 @@ async fn main() {
 
     println!("policy_id: {}, output_dir: {:?}", opt.policy_id, opt.output_dir);
 
-    let service = BookioService::new().await.unwrap();
-    let result = service.verify_policy_id(&opt.policy_id).await;
+    let service = BookioService::new().unwrap();
+    let result = service.verify_policy_id(&opt.policy_id, URL).await;
 
     if let Err(e) = result {
         println!("policy_id {} is not valid: {}", opt.policy_id, e);
@@ -36,7 +39,7 @@ async fn main() {
     }
 
     if let Ok(true) = result {
-        let service = BlockFrostService::new().await.unwrap();
+        let service = BlockFrostService::new().unwrap();
         let result = service.fetch_assets_metadata(&opt.policy_id, &opt.output_dir).await;
         if let Err(e) = result {
             println!("cannot fetch metadata: {}", e);
