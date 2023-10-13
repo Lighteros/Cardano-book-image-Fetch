@@ -56,3 +56,86 @@ impl BookioService {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use mockito;
+
+    #[tokio::test]
+    async fn test_fetch_collections() {
+        let mut server = mockito::Server::new();
+        let mock = server
+            .mock("GET", "/")
+            .with_status(200)
+            .with_header("content-type", "text/plain")
+            .with_body(
+                r#"
+                {
+                  "type": "collections",
+                  "data": [
+                    {
+                      "collection_id": "test_id_1",
+                      "description": "description 1",
+                      "blockchain": "blockchain 1",
+                      "network": "network 1"
+                    },
+                    {
+                      "collection_id": "test_id_2",
+                      "description": "description 2",
+                      "blockchain": "blockchain 2",
+                      "network": "network 2"
+                    }
+                  ]
+                }
+            "#,
+            )
+            .create();
+        let url = server.url();
+        let service = BookioService::new().unwrap();
+        let collections = service.fetch_collections(&url).await.unwrap();
+        assert_eq!(collections.len(), 2);
+
+        let first = &collections[0];
+        assert_eq!(first.collection_id, "test_id_1");
+        assert_eq!(first.description, "description 1");
+
+        mock.assert();
+    }
+
+    #[tokio::test]
+    async fn test_verify_policy_id() {
+        let mut server = mockito::Server::new();
+        let mock = server
+            .mock("GET", "/")
+            .with_status(200)
+            .with_header("content-type", "text/plain")
+            .with_body(
+                r#"
+                {
+                  "type": "collections",
+                  "data": [
+                    {
+                      "collection_id": "test_id_1",
+                      "description": "description 1",
+                      "blockchain": "blockchain 1",
+                      "network": "network 1"
+                    },
+                    {
+                      "collection_id": "test_id_2",
+                      "description": "description 2",
+                      "blockchain": "blockchain 2",
+                      "network": "network 2"
+                    }
+                  ]
+                }
+            "#,
+            )
+            .create();
+        let url = server.url();
+        let service = BookioService::new().unwrap();
+        let is_valid = service.verify_policy_id("test_id_1", &url).await.unwrap();
+        assert_eq!(is_valid, true);
+        mock.assert();
+    }
+}
