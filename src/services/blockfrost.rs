@@ -18,7 +18,7 @@ pub struct BlockFrostService {
     client: BlockFrostApi,
 }
 
-const NUM_CONCURRENT_FETCHES: usize = 10;
+const NUM_CONCURRENT_FETCHES: usize = 1;
 
 impl BlockFrostService {
     /// Constructs a new BlockFrostService.
@@ -59,7 +59,8 @@ impl BlockFrostService {
         let mut assets = self.fetch_assets(policy_id).await.context("Failed to fetch assets")?;
         assets.reverse();
 
-        let (tx, mut rx) = mpsc::channel::<Result<AssetDetails, blockfrost::Error>>(10);
+        let (tx, mut rx) =
+            mpsc::channel::<Result<AssetDetails, blockfrost::Error>>(NUM_CONCURRENT_FETCHES);
         let mut asset_metadata = vec![];
         let mut download_tasks = Vec::new();
         let initial_assets = assets.split_off(assets.len().saturating_sub(NUM_CONCURRENT_FETCHES));
