@@ -18,7 +18,7 @@ pub struct BlockFrostService {
     client: BlockFrostApi,
 }
 
-const NUM_CONCURRENT_FETCHES: usize = 1;
+const NUM_CONCURRENT_FETCHES: usize = 10;
 
 impl BlockFrostService {
     /// Constructs a new BlockFrostService.
