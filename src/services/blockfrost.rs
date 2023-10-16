@@ -67,7 +67,7 @@ impl BlockFrostService {
         let mut remaining_tasks = initial_assets.len();
 
         // create a semaphore to limit the number of concurrent downloads (limit the cpu usage)
-        let semaphore = Arc::new(Semaphore::new(3));
+        let semaphore = Arc::new(Semaphore::new(1));
 
         let download_service = Arc::new(DownloadService::new(output_dir.clone()));
 
