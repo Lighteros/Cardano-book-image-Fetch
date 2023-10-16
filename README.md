@@ -1,4 +1,4 @@
-# Cardano Book Image Fetcher
+# Cardano Book Image Fetcher (Rust Version)
 
 This application fetches high-resolution cover images of books based on a provided Cardano policy ID and saves them to a specified directory.
 
