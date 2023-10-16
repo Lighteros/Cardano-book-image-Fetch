@@ -4,6 +4,7 @@ use std::path::PathBuf;
 use tempfile::NamedTempFile;
 use tokio::fs::File;
 use tokio::io::AsyncWriteExt;
+use tokio_stream::StreamExt;
 
 /// DownloadService: it has one member: output_dir.
 pub struct DownloadService {
@@ -44,24 +45,22 @@ impl DownloadService {
             let temp_file_path = temp_file.path().to_path_buf(); // keep tempfile path for later
 
             // Fetch the file content into the 'source' variable
-            let mut source =
-                self.client.get(url).send().await.context("Failed downloading file")?;
+            let response = self.client.get(url).send().await.context("Failed downloading file")?;
 
             // Initialize an async file instance pointing at the temp file
             let mut dest =
                 File::create(&temp_file_path).await.context("Failed creating destination file")?;
+            let mut stream = response.bytes_stream();
 
             // Stream download
             // While there are data chunks available in the source...
-            while let Ok(chunk_result) = source.chunk().await {
-                match chunk_result {
-                    Some(chunk) => {
-                        // ...write those chunks to the destination file.
-                        dest.write_all(&chunk).await.context("Failed to write to the file")?;
-                    }
-                    None => (),
-                }
+            while let Some(item) = stream.next().await {
+                let chunk = item.context("Failed reading chunk from the stream")?;
+                dest.write_all(&chunk).await.context("Failed to write chunk to output")?;
             }
+
+            // let bytes = response.bytes().await.context("failed converting respone to bytes")?;
+            // dest.write_all(&bytes).await.context("Failed to write to the file")?;
 
             // Persisting temp file (rename)
             // Once the temp file is fully written, rename it to the desired filename.

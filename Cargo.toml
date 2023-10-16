@@ -9,12 +9,13 @@ edition = "2021"
 anyhow = "1.0.75"
 blockfrost = "0.2.1"
 futures = "0.3.28"
-reqwest = { version = "0.11.22", features = ["json"] }
+reqwest = { version = "0.11.22", features = ["json", "stream"] }
 serde = "1.0.188"
 serde_json = "1.0.107"
 structopt = "0.3.26"
 tempfile = "3.8.0"
 tokio = { version = "1.32.0", features = ["full"] }
+tokio-stream = "0.1.14"
 
 [dev-dependencies]
 mockito = "1.2.0"

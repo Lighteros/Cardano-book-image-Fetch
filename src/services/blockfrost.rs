@@ -94,6 +94,7 @@ impl BlockFrostService {
                     // checking if the downloaded data object is the image
                     if let Some(Value::Array(files)) = onchain_metadata.get("files") {
                         // check if the download source is available for the field
+                        // if let Some(Value::String(src)) = onchain_metadata.get("image") {
                         if let Some(Value::String(src)) = files[0].get("src") {
                             // check if the source is available
                             let url = ipfs_to_http(&src);
