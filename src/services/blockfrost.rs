@@ -66,6 +66,8 @@ impl BlockFrostService {
         let initial_assets = assets.split_off(assets.len().saturating_sub(NUM_CONCURRENT_FETCHES));
         let mut remaining_tasks = initial_assets.len();
 
+        let mut downloaded_assets = vec![];
+
         // create a semaphore to limit the number of concurrent downloads (limit the cpu usage)
         let semaphore = Arc::new(Semaphore::new(1));
 
@@ -94,8 +96,8 @@ impl BlockFrostService {
                     // checking if the downloaded data object is the image
                     if let Some(Value::Array(files)) = onchain_metadata.get("files") {
                         // check if the download source is available for the field
-                        // if let Some(Value::String(src)) = onchain_metadata.get("image") {
-                        if let Some(Value::String(src)) = files[0].get("src") {
+                        if let Some(Value::String(src)) = onchain_metadata.get("image") {
+                            // if let Some(Value::String(src)) = files[0].get("src") {
                             // check if the source is available
                             let url = ipfs_to_http(&src);
                             if let Ok(url) = url {
@@ -103,7 +105,6 @@ impl BlockFrostService {
                                     asset: metadata.asset.clone(),
                                     src: src.clone(),
                                 });
-                                is_valid = true;
 
                                 let mut extension = "png";
                                 if let Some(Value::String(media_type)) = files[0].get("mediaType") {
@@ -114,29 +115,37 @@ impl BlockFrostService {
                                         _ => (),
                                     }
                                 }
-                                let asset = metadata.asset.clone();
-                                let filename = format!("{}.{}", asset, extension);
+                                // let asset = metadata.asset.clone();
+                                let filename = format!("{}.{}", &url[21..], extension);
+                                if !downloaded_assets.contains(&url) {
+                                    is_valid = true;
+                                    // create a new task to download the image associated with the asset
+                                    let permit = semaphore
+                                        .clone()
+                                        .acquire_owned()
+                                        .await
+                                        .expect("Failed to acquire semaphore"); // Acquire a permit from the semaphore
 
-                                // create a new task to download the image associated with the asset
-                                let permit = semaphore
-                                    .clone()
-                                    .acquire_owned()
-                                    .await
-                                    .expect("Failed to acquire semaphore"); // Acquire a permit from the semaphore
+                                    let download_service = Arc::clone(&download_service);
 
-                                let download_service = Arc::clone(&download_service);
+                                    println!("Downloading asset: {:?}", url);
+                                    let url = Url::parse(&url)?;
+                                    downloaded_assets.push(url.to_string());
+                                    let download_task = tokio::spawn(async move {
+                                        let _permit = permit;
+                                        match download_service
+                                            .download_and_save(url, filename)
+                                            .await
+                                        {
+                                            Err(e) => {
+                                                eprintln!("Failed to download asset: {:?}", e)
+                                            }
+                                            _ => (),
+                                        }
+                                    });
 
-                                println!("Downloading asset: {:?}", url);
-                                let url = Url::parse(&url)?;
-                                let download_task = tokio::spawn(async move {
-                                    let _permit = permit;
-                                    match download_service.download_and_save(url, filename).await {
-                                        Err(e) => eprintln!("Failed to download asset: {:?}", e),
-                                        _ => (),
-                                    }
-                                });
-
-                                download_tasks.push(download_task);
+                                    download_tasks.push(download_task);
+                                }
                             }
                         }
                     }
