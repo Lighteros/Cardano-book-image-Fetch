@@ -66,6 +66,7 @@ impl BlockFrostService {
         let initial_assets = assets.split_off(assets.len().saturating_sub(NUM_CONCURRENT_FETCHES));
         let mut remaining_tasks = initial_assets.len();
 
+        // store downloaded image urls to avoid duplicated download
         let mut downloaded_assets = vec![];
 
         // create a semaphore to limit the number of concurrent downloads (limit the cpu usage)
@@ -117,6 +118,7 @@ impl BlockFrostService {
                                 }
                                 // let asset = metadata.asset.clone();
                                 let filename = format!("{}.{}", &url[21..], extension);
+                                // if it's not already downloaded
                                 if !downloaded_assets.contains(&url) {
                                     is_valid = true;
                                     // create a new task to download the image associated with the asset
@@ -130,6 +132,7 @@ impl BlockFrostService {
 
                                     println!("Downloading asset: {:?}", url);
                                     let url = Url::parse(&url)?;
+                                    // check as it's downloaded
                                     downloaded_assets.push(url.to_string());
                                     let download_task = tokio::spawn(async move {
                                         let _permit = permit;
