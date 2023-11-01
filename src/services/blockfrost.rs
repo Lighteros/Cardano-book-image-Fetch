@@ -1,5 +1,6 @@
 //! This module defines a service for interacting with BlockFrost API. It provides methods to fetch assets and download images from given policy id.
 
+use crate::utils::util::IPFS_GATEWAY;
 use crate::{models::asset::Asset, utils::util::ipfs_to_http};
 
 use super::download::DownloadService;
@@ -117,7 +118,8 @@ impl BlockFrostService {
                                     }
                                 }
                                 // let asset = metadata.asset.clone();
-                                let filename = format!("{}.{}", &url[21..], extension);
+                                let filename =
+                                    format!("{}.{}", &url[IPFS_GATEWAY.len()..], extension);
                                 // if it's not already downloaded
                                 if !downloaded_assets.contains(&url) {
                                     is_valid = true;
