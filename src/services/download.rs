@@ -48,7 +48,7 @@ impl DownloadService {
             // Fetch the file content into the 'source' variable
             let response = self.client.get(url).send().await.context("Failed downloading file")?;
 
-            let (tx, mut rx) = tokio::sync::mpsc::channel::<Result<Bytes, reqwest::Error>>(1024);
+            let (tx, mut rx) = tokio::sync::mpsc::channel::<Bytes>(1024);
 
             // Initialize an async file instance pointing at the temp file
             let mut dest =
@@ -58,6 +58,7 @@ impl DownloadService {
             let network_reader = tokio::spawn(async move {
                 let mut stream = response.bytes_stream();
                 while let Some(chunk) = stream.next().await {
+                    let chunk = chunk.context("Failed reading chunk from the response stream")?;
                     tx.send(chunk).await.context("Failed to send chunk to the channel")?;
                 }
                 Result::<(), anyhow::Error>::Ok(())
@@ -65,7 +66,6 @@ impl DownloadService {
             // Stream download
             // While there are data chunks available in the source...
             while let Some(chunk) = rx.recv().await {
-                let chunk = chunk.context("Failed reading chunk from the stream")?;
                 dest.write_all(&chunk).await.context("Failed to write chunk to output")?;
             }
 
