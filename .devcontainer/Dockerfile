@@ -10,5 +10,5 @@ RUN bash ./setup.sh
 RUN rm /bin/sh && ln -s /bin/bash /bin/sh
 
 # confirm installation
-RUN rustc --version
-RUN cargo --version
+# RUN rustc --version
+# RUN cargo --version
