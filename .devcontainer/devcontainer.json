@@ -31,7 +31,12 @@
         "codeium.enableConfig": {
           "*": true,
           "prisma": true
-        }
+        },
+        "editor.fontFamily": "Fira Code Retina",
+        "editor.fontSize": 12,
+        "editor.tabSize": 2,
+        "editor.fontWeight": "450",
+        "editor.fontLigatures": true
       }
     }
   },
