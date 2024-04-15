@@ -36,4 +36,4 @@ chown -R $USER_UID:$USER_GID /home/$USERNAME/.oh-my-zsh /home/$USERNAME/.zshrc
 
 ## install firacode
 sudo add-apt-repository universe
-sudo apt install fonts-firacode
+sudo apt-get install fonts-firacode
